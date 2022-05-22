@@ -1,90 +1,56 @@
-export enum Predicate {
-  eq,
-  lt,
-  le,
-  qt,
-  qe,
-}
-
-export enum Relation {
-  and,
-  or,
-}
-
-export type Type = {
+export class Type {
   name: string
 
-  compare(op: Predicate, x: Type): boolean
+  constructor(name: string)
+  constructor(parent: Type, name: string)
+  constructor(parent: string | Type, name?: string) {
+    let typeName: string
+    if (typeof parent == "string") {
+      typeName = parent + ", " + name
+    } else {
+      typeName = name
+    }
 
-  canBeType(type: Type): boolean
-
-  asType<T extends Type>(type: T): T | null
-
-  copy<T>(this: T): Type
-}
-
-export class TypeBase {
-  name: string
+    this.name = typeName
+  }
 
   canBeType(type: Type): boolean {
     return this.name.startsWith(type.name)
   }
-
-  asType<T extends Type>(type: T): T | null {
-    if (!this.canBeType(type)) return null
-
-    return
-  }
 }
 
-export class Int extends TypeBase {
-  value: number
-
-  constructor(value: number) {
-    super()
-    this.name = "Int"
-    this.value = Math.floor(value)
-  }
-
-  copy(): Int {
-    return new Int(this.value)
-  }
-
-  compare(op: Predicate, x: Type): boolean {
-    const int = x.asType<Int>(this)
-    if (int == null) {
-      throw new TypeError()
-    }
-
-    switch (op) {
-      case Predicate.eq:
-        return this.value === int.value
-
-      case Predicate.lt:
-        return this.value < int.value
-
-      case Predicate.le:
-        return this.value <= int.value
-
-      case Predicate.qt:
-        return this.value > int.value
-
-      case Predicate.qe:
-        return this.value >= int.value
-
-      default:
-        throw new TypeError()
+export function merge(...types: Type[][]): Type[] {
+  const set = new Set<Type>()
+  for (let a of types) {
+    for (let b of a) {
+      set.add(b)
     }
   }
+
+  return Array.from(set)
 }
 
-export class PositiveInt extends Int {
-  constructor(value: number) {
-    super(value)
-    this.name = "Int, PositiveInt"
+/**
+ * 判断 A 是否为 B 的子集
+ */
+export function isSubSet(a: Type[], b: Type[]): boolean {
+  const setB = new Set<Type>()
+  for (let bb of b) {
+    setB.add(bb)
+  }
 
-    if (this.value <= 0) {
-      throw TypeError()
+  for (let aa of a) {
+    if (!setB.has(aa)) {
+      return false
     }
   }
+
+  return true
 }
+
+export const Int = new Type("Int")
+export const PositiveInt = new Type(Int, "PositiveInt")
+
+export const Str = new Type("String")
+export const Account = new Type(Str, "Account")
+export const Password = new Type(Str, "Password")

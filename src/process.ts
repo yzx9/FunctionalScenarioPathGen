@@ -7,6 +7,6 @@ export type Process = {
   pre: Condition[]
   post: Condition[]
 
-  x: Type[][]
-  y: Type[][]
+  x: Type[]
+  y: Type[]
 }
