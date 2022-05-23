@@ -1,18 +1,18 @@
-import { divide, getDifference, getFullArray } from "../utils"
+import { divide, getDifference, getArrangement, getFullArray } from "../utils"
 
-test("get full array", () => {
-  expect(getFullArray(1, 1)).toEqual([[0]])
-  expect(getFullArray(2, 1)).toEqual([[0], [1]])
-  expect(getFullArray(2, 2)).toEqual([[0, 1]])
-  expect(getFullArray(3, 1)).toEqual([[0], [1], [2]])
-  expect(getFullArray(3, 2)).toEqual([
+test("get arrayangement", () => {
+  expect(getArrangement(1, 1)).toEqual([[0]])
+  expect(getArrangement(2, 1)).toEqual([[0], [1]])
+  expect(getArrangement(2, 2)).toEqual([[0, 1]])
+  expect(getArrangement(3, 1)).toEqual([[0], [1], [2]])
+  expect(getArrangement(3, 2)).toEqual([
     [0, 1],
     [0, 2],
     [1, 2],
   ])
-  expect(getFullArray(3, 3)).toEqual([[0, 1, 2]])
-  expect(getFullArray(4, 1)).toEqual([[0], [1], [2], [3]])
-  expect(getFullArray(4, 2)).toEqual([
+  expect(getArrangement(3, 3)).toEqual([[0, 1, 2]])
+  expect(getArrangement(4, 1)).toEqual([[0], [1], [2], [3]])
+  expect(getArrangement(4, 2)).toEqual([
     [0, 1],
     [0, 2],
     [0, 3],
@@ -20,13 +20,13 @@ test("get full array", () => {
     [1, 3],
     [2, 3],
   ])
-  expect(getFullArray(4, 3)).toEqual([
+  expect(getArrangement(4, 3)).toEqual([
     [0, 1, 2],
     [0, 1, 3],
     [0, 2, 3],
     [1, 2, 3],
   ])
-  expect(getFullArray(4, 4)).toEqual([[0, 1, 2, 3]])
+  expect(getArrangement(4, 4)).toEqual([[0, 1, 2, 3]])
 })
 
 test("get difference", () => {

@@ -23,28 +23,15 @@ export class Path {
     path.layers = this.layers.map((a) => a.map((b) => b))
     return path
   }
+
+  toString(): string {
+    return JSON.stringify(this.layers.map((a) => a.map((b) => b.id)))
+  }
 }
 
 export function genFuntionalScenarioPaths(processes: Process[]): Path[] {
-  const paths: Path[] = []
-
-  for (let i = 1; i <= processes.length; i++) {
-    const fullArray = getFullArray(processes.length, i)
-
-    for (let notUsedIndexs of fullArray) {
-      const [notUsed, used] = divide(processes, notUsedIndexs)
-
-      const path = new Path(processes)
-      path.layers.push(used)
-
-      // let inputs = merge(...pro.map((a) => a.x))
-      const outputs = merge(...used.map((a) => a.y))
-      const subpaths = genPathLayer(path, outputs, notUsed)
-      paths.push(...subpaths)
-    }
-  }
-
-  return paths
+  const path = new Path(processes)
+  return genPathLayer(path, processes)
 }
 
 /**
@@ -54,33 +41,46 @@ export function genFuntionalScenarioPaths(processes: Process[]): Path[] {
  * @param processes 可用的Process
  * @returns
  */
-function genPathLayer(
-  lastPath: Path,
-  lastOutputs: Type[],
-  processes: Process[]
-): Path[] {
-  const paths = []
-  for (let i = 0; i < processes.length; i++) {
-    let fullArray = getFullArray(processes.length, i)
+function genPathLayer(lastPath: Path, processes: Process[]): Path[] {
+  if (processes.length == 0) return [lastPath]
 
-    for (let notUsedIndexs of fullArray) {
-      const [notUsed, used] = divide(processes, notUsedIndexs)
+  const paths = []
+  for (let i = 1; i <= processes.length; i++) {
+    for (let indexs of getFullArray(processes.length, i)) {
+      const [used, notUsed] = divide(processes, indexs)
       const inputs = merge(...used.map((a) => a.x))
-      if (!isSubSet(inputs, lastOutputs)) {
-        // this is invalid path, notes that this is not about validity
-        continue
+
+      if (lastPath.layers.length) {
+        const lastLayer = lastPath.layers[lastPath.layers.length - 1]
+        const lastOutputs = merge(...lastLayer.map((a) => a.y))
+        if (!isSubSet(inputs, lastOutputs)) {
+          // this is not an available path
+          continue
+        }
       }
 
       const path = lastPath.copy()
       path.layers.push(used)
 
-      const outputs = merge(...used.map((a) => a.y))
-      // TODO: update path
+      const subpaths = genPathLayer(path, notUsed)
 
-      const subpaths = genPathLayer(path, outputs, notUsed)
-      paths.push(...subpaths)
+      if (lastPath.layers.length) {
+        const genRoutes = genPathRoutes(
+          path.layers[path.layers.length - 2],
+          path.layers[path.layers.length - 1]
+        )
+
+        paths.push(...subpaths.map(genRoutes).flat())
+      } else {
+        paths.push(...subpaths)
+      }
     }
   }
 
   return paths
+}
+
+function genPathRoutes(from: Process[], to: Process[]): (path: Path) => Path[] {
+  // TODO swith route
+  return (path: Path) => [path]
 }

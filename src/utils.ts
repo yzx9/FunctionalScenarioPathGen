@@ -1,11 +1,11 @@
 /**
- * 全排列, C_{n}^{k}
+ * 排列, C_{n}^{k}
  * @param n
  * @param k
  * @param offset
  * @returns
  */
-export function getFullArray(
+export function getArrangement(
   n: number,
   k: number,
   offset: number = 0
@@ -15,7 +15,7 @@ export function getFullArray(
 
   const array: number[][] = []
   for (let i = offset; i < n - k + 1; i++) {
-    const arr = getFullArray(n, k - 1, i + 1)
+    const arr = getArrangement(n, k - 1, i + 1)
     array.push(...arr.map((a) => [i, ...a]))
   }
 
