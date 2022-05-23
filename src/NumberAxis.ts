@@ -8,6 +8,10 @@ class IntervalSpace {
     this.interval = interval
     this.isInclude = isInclude
   }
+
+  /**
+   * 从Condition构造区间，Condition必须为根节点
+   */
   static fromCondition(condition: Condition): IntervalSpace {
     // Condition is a root node
     if (typeof condition[0] === "string") {
@@ -17,6 +21,10 @@ class IntervalSpace {
       throw new TypeError("condition must be a root node")
     }
   }
+
+  /**
+   * 从操作符构造区间
+   */
   static fromPredicate(op: Predicate, num: number): IntervalSpace {
     if (op == Predicate.eq) {
       return new IntervalSpace([num, num], [true, true])
@@ -35,7 +43,7 @@ class IntervalSpace {
     }
   }
 
-  isContain(value: IntervalSpace): boolean {
+  isSuperInterval(value: IntervalSpace): boolean {
     if (this.interval[0] < value.interval[0] && this.interval[1] > value.interval[1]) {
       return true
     }
@@ -72,7 +80,7 @@ class IntervalSpace {
     return false
   }
 
-  isIntersect(value: IntervalSpace): boolean {
+  hasCommonSpan(value: IntervalSpace): boolean {
     if (this.interval[1] > value.interval[0] && this.interval[0] < value.interval[1]) {
       return true
     }
@@ -92,11 +100,7 @@ class IntervalSpace {
     return false
   }
 
-  isNum(): boolean {
-    return this.interval[0] == this.interval[1]
-  }
-
-  merge(value: IntervalSpace): IntervalSpace {
+  union(value: IntervalSpace): IntervalSpace {
     const interval: [number, number] = [-Infinity, Infinity]
     const isInclude: [boolean, boolean] = [false, false]
 
@@ -112,6 +116,31 @@ class IntervalSpace {
     interval[1] = Math.max(this.interval[1], value.interval[1])
     if (interval[1] == this.interval[1] && interval[1] == value.interval[1]) {
       isInclude[1] = this.isInclude[1] || value.isInclude[1]
+    } else if (interval[1] == this.interval[1]) {
+      isInclude[1] = this.isInclude[1]
+    } else {
+      isInclude[1] = value.isInclude[1]
+    }
+
+    return new IntervalSpace(interval, isInclude)
+  }
+
+  intersect(value: IntervalSpace): IntervalSpace {
+    const interval: [number, number] = [-Infinity, Infinity]
+    const isInclude: [boolean, boolean] = [false, false]
+
+    interval[0] = Math.max(this.interval[0], value.interval[0])
+    if (interval[0] == this.interval[0] && interval[0] == value.interval[0]) {
+      isInclude[0] = this.isInclude[0] && value.isInclude[0]
+    } else if (interval[0] == this.interval[0]) {
+      isInclude[0] = this.isInclude[0]
+    } else {
+      isInclude[0] = value.isInclude[0]
+    }
+
+    interval[1] = Math.min(this.interval[1], value.interval[1])
+    if (interval[1] == this.interval[1] && interval[1] == value.interval[1]) {
+      isInclude[1] = this.isInclude[1] && value.isInclude[1]
     } else if (interval[1] == this.interval[1]) {
       isInclude[1] = this.isInclude[1]
     } else {
@@ -143,17 +172,20 @@ export class NumberAxis {
     const newInterval = IntervalSpace.fromPredicate(op, num)
 
     // 检测this中的区间是否包含newInterval
-    if (!this.isContainInterval(newInterval)) {
+    if (!this.isContain(newInterval)) {
       // 检测newInterval中的区间是否包含this
       this.intervalSpaces.forEach((space, index) => {
-        if (newInterval.isContain(space)) {
+        if (newInterval.isSuperInterval(space)) {
+          // 包含则删除
           this.intervalSpaces.splice(index, 1)
         }
       })
 
-      const mergeIndex = this.mergeIndex(newInterval)
-      if (mergeIndex !== -1) {
-        this.intervalSpaces[mergeIndex] = this.intervalSpaces[mergeIndex].merge(newInterval)
+      // 检测newInterval中的区间是否与this交叉
+      if (this.hasCommonSpan(newInterval)) {
+        // 交叉则合并
+        const unionIndex = this.commonSpanIndex(newInterval)
+        this.intervalSpaces[unionIndex] = this.intervalSpaces[unionIndex].union(newInterval)
       } else {
         this.intervalSpaces.push(newInterval)
       }
@@ -164,39 +196,28 @@ export class NumberAxis {
 
   intersect(op: Predicate, num: number): NumberAxis {
     const newInterval = IntervalSpace.fromPredicate(op, num)
-    // TODO
-    // 检测this中的区间是否包含newInterval
-    if (!this.isContainInterval(newInterval)) {
-      // 检测newInterval中的区间是否包含this
-      this.intervalSpaces.forEach((space, index) => {
-        if (newInterval.isContain(space)) {
-          this.intervalSpaces.splice(index, 1)
-        }
-      })
 
-      const mergeIndex = this.mergeIndex(newInterval)
-      if (mergeIndex !== -1) {
-        this.intervalSpaces[mergeIndex] = this.intervalSpaces[mergeIndex].merge(newInterval)
+    // 检测this中的区间是否包含newInterval
+    if (this.isContain(newInterval)) {
+      // 若包含则清空数轴上所有区间
+      this.intervalSpaces = [newInterval]
+    } else {
+      // 不包含则尝试取交集
+      if (this.hasCommonSpan(newInterval)) {
+        const intersectIndex = this.commonSpanIndex(newInterval)
+        this.intervalSpaces[intersectIndex] = this.intervalSpaces[intersectIndex].intersect(newInterval)
       } else {
-        this.intervalSpaces.push(newInterval)
+        this.intervalSpaces = []
       }
     }
 
     return this
   }
 
-  isContainInterval(interval: IntervalSpace) {
-    let res: boolean = false
-
-    if (this.intervalSpaces.length === 0) return res
-
-    this.intervalSpaces.forEach((space) => {
-      if (space.isContain(interval)) {
-        res = true
-      }
+  isContain(interval: IntervalSpace) {
+    return this.intervalSpaces.some((item) => {
+      return item.isSuperInterval(interval)
     })
-
-    return res
   }
 
   isContainAxis(axis: NumberAxis): boolean {
@@ -204,7 +225,7 @@ export class NumberAxis {
     for (; i < axis.intervalSpaces.length; ) {
       let flag: boolean = false
       for (let j = 0; j < this.intervalSpaces.length; j++) {
-        if (this.intervalSpaces[j].isContain(axis.intervalSpaces[i])) {
+        if (this.intervalSpaces[j].isSuperInterval(axis.intervalSpaces[i])) {
           i++
           flag = true
         }
@@ -219,11 +240,17 @@ export class NumberAxis {
     return false
   }
 
-  mergeIndex(interval: IntervalSpace) {
+  hasCommonSpan(interval: IntervalSpace) {
+    return this.intervalSpaces.some((item) => {
+      return item.hasCommonSpan(interval)
+    })
+  }
+
+  commonSpanIndex(interval: IntervalSpace) {
     let res = -1
 
     this.intervalSpaces.forEach((space, index) => {
-      if (space.isIntersect(interval)) {
+      if (space.hasCommonSpan(interval)) {
         res = index
       }
     })
