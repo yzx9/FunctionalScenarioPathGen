@@ -18,9 +18,11 @@ export enum Relation {
   or,
 }
 
-export type Condition = [Variable, Predicate, Comparable] | [Condition, Relation, Condition]
+export type Condition =
+  | [Variable, Predicate, Comparable]
+  | [Condition, Relation, Condition]
 
-export function merge(...conditions: Condition[]): Condition {
+export function and(...conditions: Condition[]): Condition {
   let cond = conditions[0]
   for (let i = 1; i < conditions.length; i++)
     cond = [cond, Relation.and, conditions[i]]
@@ -81,27 +83,31 @@ function getConditionAxes(c: Condition) {
 }
 
 export function toString(cond: Condition): string {
-  let op: string
-  switch (cond[1]) {
-    case Predicate.eq:
-      op = "="
-    case Predicate.lt:
-      op = "<"
-    case Predicate.le:
-      op = "<="
-    case Predicate.qt:
-      op = ">"
-    case Predicate.qe:
-      op = ">="
-    case Relation.and:
-      op = "and"
-    case Relation.or:
-      op = "or"
-  }
-
   if (typeof cond[0] === "string") {
+    let op: string
+    switch (cond[1]) {
+      case Predicate.eq:
+        op = "="
+      case Predicate.lt:
+        op = "<"
+      case Predicate.le:
+        op = "<="
+      case Predicate.qt:
+        op = ">"
+      case Predicate.qe:
+        op = ">="
+    }
+
     return `${cond[0]} ${op} ${cond[2]}`
   } else {
+    let op: string
+    switch (cond[1]) {
+      case Relation.and:
+        op = "and"
+      case Relation.or:
+        op = "or"
+    }
+
     return toString(cond[0]) + ` ${op} ` + toString(cond[2] as Condition)
   }
 }

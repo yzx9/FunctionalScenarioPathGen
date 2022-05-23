@@ -1,5 +1,5 @@
 import { NumberAxis } from "../NumberAxis"
-import { Condition, Predicate, Relation } from "../Condition"
+import { Condition, Predicate, Relation } from "../condition"
 
 test("NumberAxis eq", () => {
   const axis = new NumberAxis().add(Predicate.eq, 1).add(Predicate.eq, 2)
