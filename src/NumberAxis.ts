@@ -59,7 +59,13 @@ class IntervalSpace {
       if (this.isInclude[0] && this.isInclude[1]) {
         return true
       }
-      if (value.isInclude == this.isInclude) {
+      if (this.isInclude[0] && this.isInclude[1] == value.isInclude[1]) {
+        return true
+      }
+      if (this.isInclude[1] && this.isInclude[0] == value.isInclude[0]) {
+        return true
+      }
+      if (this.isInclude[0] == value.isInclude[0] && this.isInclude[1] == value.isInclude[1]) {
         return true
       }
     }
@@ -145,11 +151,14 @@ export class NumberAxis {
   isContainAxis(axis: NumberAxis): boolean {
     let i = 0
     for (; i < axis.intervalSpaces.length; ) {
+      let flag: boolean = false
       for (let j = 0; j < this.intervalSpaces.length; j++) {
         if (this.intervalSpaces[j].isContain(axis.intervalSpaces[i])) {
           i++
+          flag = true
         }
       }
+      if (!flag) break
     }
 
     if (i === axis.intervalSpaces.length) {
