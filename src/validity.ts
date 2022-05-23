@@ -6,10 +6,13 @@ export function isValidPath(path: Path): [boolean, string] {
     const post = and(
       ...path.layers[i - 1].filter((a) => a.post).map((a) => a.post)
     )
-    const pre = and(...path.layers[i].map((a) => a.pre))
+    const pre = and(...path.layers[i].filter((a) => a.pre).map((a) => a.pre))
 
     if (!isSubCondition(pre, post)) {
-      return [false, `${toString(pre)} is not a sub set of ${toString(post)}}`]
+      return [
+        false,
+        `(${toString(pre)}) is not a sub set of (${toString(post)})`,
+      ]
     }
   }
 

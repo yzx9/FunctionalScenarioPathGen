@@ -84,21 +84,7 @@ function getConditionAxes(c: Condition) {
 
 export function toString(cond: Condition): string {
   if (typeof cond[0] === "string") {
-    let op: string
-    switch (cond[1]) {
-      case Predicate.eq:
-        op = "="
-      case Predicate.lt:
-        op = "<"
-      case Predicate.le:
-        op = "<="
-      case Predicate.qt:
-        op = ">"
-      case Predicate.qe:
-        op = ">="
-    }
-
-    return `${cond[0]} ${op} ${cond[2]}`
+    return _toString(cond)
   } else {
     let op: string
     switch (cond[1]) {
@@ -108,6 +94,24 @@ export function toString(cond: Condition): string {
         op = "or"
     }
 
-    return toString(cond[0]) + ` ${op} ` + toString(cond[2] as Condition)
+    return `(${toString(cond[0])}) ${op} (${toString(cond[2] as Condition)})`
   }
+}
+
+function _toString(cond: Condition): string {
+  let op: string
+  switch (cond[1]) {
+    case Predicate.eq:
+      op = "="
+    case Predicate.lt:
+      op = "<"
+    case Predicate.le:
+      op = "<="
+    case Predicate.qt:
+      op = ">"
+    case Predicate.qe:
+      op = ">="
+  }
+
+  return `${cond[0]} ${op} ${cond[2]}`
 }

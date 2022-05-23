@@ -97,7 +97,6 @@ function genPathRoutes(path: Path): (path: Path) => Path[] {
       connectsFullArray.push(froms.map((fromIndex) => [fromIndex, toIndex]))
     }
   }
-  console.log(connectsFullArray)
 
   // TODO swith route
   const typesFullArray = getFullArray(connectsFullArray.map((a) => a.length))
