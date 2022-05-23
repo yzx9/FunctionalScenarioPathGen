@@ -4,9 +4,9 @@ class IntervalSpace {
   interval: [number, number]
   isInclude: [boolean, boolean]
 
-  constructor(min: number, max: number, isIncludeMin: boolean, isIncludeMax: boolean) {
-    this.interval = [min, max]
-    this.isInclude = [isIncludeMin, isIncludeMax]
+  constructor(interval: [number, number], isInclude: [boolean, boolean]) {
+    this.interval = interval
+    this.isInclude = isInclude
   }
   static fromCondition(condition: Condition): IntervalSpace {
     // Condition is a root node
@@ -19,19 +19,19 @@ class IntervalSpace {
   }
   static fromPredicate(op: Predicate, num: number): IntervalSpace {
     if (op == Predicate.eq) {
-      return new IntervalSpace(num, num, true, true)
+      return new IntervalSpace([num, num], [true, true])
     }
     if (op == Predicate.lt) {
-      return new IntervalSpace(-Infinity, num, false, false)
+      return new IntervalSpace([-Infinity, num], [false, false])
     }
     if (op == Predicate.le) {
-      return new IntervalSpace(-Infinity, num, false, true)
+      return new IntervalSpace([-Infinity, num], [false, true])
     }
     if (op == Predicate.qt) {
-      return new IntervalSpace(num, Infinity, false, false)
+      return new IntervalSpace([num, Infinity], [false, false])
     }
     if (op == Predicate.qe) {
-      return new IntervalSpace(num, Infinity, true, false)
+      return new IntervalSpace([num, Infinity], [true, false])
     }
   }
 
@@ -91,16 +91,40 @@ class IntervalSpace {
     }
     return false
   }
+
   isNum(): boolean {
     return this.interval[0] == this.interval[1]
   }
 
   merge(value: IntervalSpace): IntervalSpace {
-    const min = Math.min(this.interval[0], value.interval[0])
-    const max = Math.max(this.interval[1], value.interval[1])
-    const isIncludeMin = this.isInclude[0] || value.isInclude[0]
-    const isIncludeMax = this.isInclude[1] || value.isInclude[1]
-    return new IntervalSpace(min, max, isIncludeMin, isIncludeMax)
+    const interval: [number, number] = [-Infinity, Infinity]
+    const isInclude: [boolean, boolean] = [false, false]
+
+    interval[0] = Math.min(this.interval[0], value.interval[0])
+    if (interval[0] == this.interval[0] && interval[0] == value.interval[0]) {
+      isInclude[0] = this.isInclude[0] || value.isInclude[0]
+    } else if (interval[0] == this.interval[0]) {
+      isInclude[0] = this.isInclude[0]
+    } else {
+      isInclude[0] = value.isInclude[0]
+    }
+
+    interval[1] = Math.max(this.interval[1], value.interval[1])
+    if (interval[1] == this.interval[1] && interval[1] == value.interval[1]) {
+      isInclude[1] = this.isInclude[1] || value.isInclude[1]
+    } else if (interval[1] == this.interval[1]) {
+      isInclude[1] = this.isInclude[1]
+    } else {
+      isInclude[1] = value.isInclude[1]
+    }
+
+    return new IntervalSpace(interval, isInclude)
+  }
+
+  toString() {
+    const left = this.isInclude[0] ? "[" : "("
+    const right = this.isInclude[1] ? "]" : ")"
+    return `${left}${this.interval[0]},${this.interval[1]}${right}`
   }
 }
 
@@ -110,10 +134,37 @@ export class NumberAxis {
   constructor(intervalSpaces: IntervalSpace[] = []) {
     this.intervalSpaces = intervalSpaces
   }
-
   add(op: Predicate, num: number): NumberAxis {
+    // TODO
+    return this.union(op, num)
+  }
+
+  union(op: Predicate, num: number): NumberAxis {
     const newInterval = IntervalSpace.fromPredicate(op, num)
 
+    // 检测this中的区间是否包含newInterval
+    if (!this.isContainInterval(newInterval)) {
+      // 检测newInterval中的区间是否包含this
+      this.intervalSpaces.forEach((space, index) => {
+        if (newInterval.isContain(space)) {
+          this.intervalSpaces.splice(index, 1)
+        }
+      })
+
+      const mergeIndex = this.mergeIndex(newInterval)
+      if (mergeIndex !== -1) {
+        this.intervalSpaces[mergeIndex] = this.intervalSpaces[mergeIndex].merge(newInterval)
+      } else {
+        this.intervalSpaces.push(newInterval)
+      }
+    }
+
+    return this
+  }
+
+  intersect(op: Predicate, num: number): NumberAxis {
+    const newInterval = IntervalSpace.fromPredicate(op, num)
+    // TODO
     // 检测this中的区间是否包含newInterval
     if (!this.isContainInterval(newInterval)) {
       // 检测newInterval中的区间是否包含this
@@ -178,5 +229,9 @@ export class NumberAxis {
     })
 
     return res
+  }
+
+  toString() {
+    return this.intervalSpaces.toString()
   }
 }
