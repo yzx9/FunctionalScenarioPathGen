@@ -29,6 +29,20 @@ test("get arrayangement", () => {
   expect(getArrangement(4, 4)).toEqual([[0, 1, 2, 3]])
 })
 
+test("get full array", () => {
+  expect(getFullArray([1])).toEqual([[0]])
+  expect(getFullArray([1, 2])).toEqual([
+    [0, 0],
+    [0, 1],
+  ])
+  expect(getFullArray([2, 2])).toEqual([
+    [0, 0],
+    [0, 1],
+    [1, 0],
+    [1, 1],
+  ])
+})
+
 test("get difference", () => {
   expect(getDifference(1, [])).toEqual([0])
   expect(getDifference(2, [])).toEqual([0, 1])

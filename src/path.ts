@@ -1,6 +1,6 @@
 import { Process } from "./process"
 import { Type, merge, isSubSet } from "./type"
-import { divide, getFullArray } from "./utils"
+import { divide, getArrangement, getFullArray } from "./utils"
 
 export class Path {
   processes: Process[]
@@ -46,7 +46,7 @@ function genPathLayer(lastPath: Path, processes: Process[]): Path[] {
 
   const paths = []
   for (let i = 1; i <= processes.length; i++) {
-    for (let indexs of getFullArray(processes.length, i)) {
+    for (let indexs of getArrangement(processes.length, i)) {
       const [used, notUsed] = divide(processes, indexs)
       const inputs = merge(...used.map((a) => a.x))
 
@@ -63,24 +63,57 @@ function genPathLayer(lastPath: Path, processes: Process[]): Path[] {
       path.layers.push(used)
 
       const subpaths = genPathLayer(path, notUsed)
-
-      if (lastPath.layers.length) {
-        const genRoutes = genPathRoutes(
-          path.layers[path.layers.length - 2],
-          path.layers[path.layers.length - 1]
-        )
-
-        paths.push(...subpaths.map(genRoutes).flat())
-      } else {
-        paths.push(...subpaths)
-      }
+      const writeRoutes = genPathRoutes(path)
+      paths.push(...subpaths.map(writeRoutes).flat())
     }
   }
 
   return paths
 }
 
-function genPathRoutes(from: Process[], to: Process[]): (path: Path) => Path[] {
+function genPathRoutes(path: Path): (path: Path) => Path[] {
+  if (path.layers.length <= 1) {
+    return (path: Path) => [path]
+  }
+
+  const from = path.layers[path.layers.length - 2]
+  const to = path.layers[path.layers.length - 1]
+
+  const indexOfTypeFroms = new Map<string, number[]>() // from type to process `from`
+  for (let i = 0; i < from.length; i++) {
+    for (let t of from[i].y) {
+      if (!indexOfTypeFroms.has(t.name)) indexOfTypeFroms.set(t.name, [])
+      indexOfTypeFroms.get(t.name).push(i)
+    }
+  }
+
+  const connectsFullArray: [
+    number, // index of from process
+    number // index of to process
+  ][][] = []
+  for (let toIndex = 0; toIndex < to.length; toIndex++) {
+    for (let x of to[toIndex].x) {
+      const froms = indexOfTypeFroms.get(x.name)
+      connectsFullArray.push(froms.map((fromIndex) => [fromIndex, toIndex]))
+    }
+  }
+  console.log(connectsFullArray)
+
   // TODO swith route
-  return (path: Path) => [path]
+  const typesFullArray = getFullArray(connectsFullArray.map((a) => a.length))
+  const connectsArray: [number, number][][] = [[[0, 0]]]
+  for (let typesConnect of typesFullArray) {
+  }
+
+  return (path: Path) => {
+    const paths: Path[] = []
+
+    for (let connects of connectsArray) {
+      const newPath = path.copy()
+      for (let [from, to] of connects) path.adjacencyMatrix[from][to] = true
+      paths.push(newPath)
+    }
+
+    return paths
+  }
 }

@@ -1,4 +1,4 @@
-import { genFuntionalScenarioPaths } from "../pathGen"
+import { genFuntionalScenarioPaths } from "../path"
 import { Process } from "../process"
 import { Bool, Int, Money, Str } from "../type"
 

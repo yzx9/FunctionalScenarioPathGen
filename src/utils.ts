@@ -1,9 +1,5 @@
 /**
  * 排列, C_{n}^{k}
- * @param n
- * @param k
- * @param offset
- * @returns
  */
 export function getArrangement(
   n: number,
@@ -20,6 +16,22 @@ export function getArrangement(
   }
 
   return array
+}
+
+/**
+ * 全排列
+ */
+export function getFullArray(ns: number[]): number[][] {
+  if (ns.length === 0) return [[]]
+
+  const arr: number[][] = []
+  const [a, ...b] = ns
+  for (let i = 0; i < a; i++) {
+    const array = getFullArray(b)
+    arr.push(...array.map((a) => [i, ...a]))
+  }
+
+  return arr
 }
 
 /**
