@@ -4,19 +4,14 @@ import { Bool, Int, Money, Str } from "../type"
 import { isSubCondition, Condition, Variable, Comparable, Relation, Predicate } from "../condition"
 import { isValidPath } from "../validity"
 
-test("generate functional scenario paths, simple", () => {
+test("validate functional scenario paths, simple", () => {
   let condition1: Condition = ["x", Predicate.lt, 1]
   let condition2: Condition = ["x", Predicate.lt, 2]
   const pro1 = new Process("pro1", [Int], [Int], condition1, condition2)
   const pro2 = new Process("pro2", [Int], [Int], condition2, condition1)
-  const pro3 = new Process("pro3", [Int], [Int], condition1, condition2)
-  const re1 = genFuntionalScenarioPaths([pro1, pro2])
-  for (let path of re1) {
+  for (let path of genFuntionalScenarioPaths([pro1, pro2])) {
     expect(isValidPath(path)[0]).toEqual(true)
   }
-
-  const re2 = genFuntionalScenarioPaths([pro1, pro2, pro3])
-  expect(re2.length).toBe(13)
 })
 
 test("generate functional scenario paths, simple", () => {
