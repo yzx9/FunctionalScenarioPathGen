@@ -168,50 +168,70 @@ export class NumberAxis {
     return this.union(op, num)
   }
 
+  // 并集
   union(op: Predicate, num: number): NumberAxis {
     const newInterval = IntervalSpace.fromPredicate(op, num)
+    this._union(newInterval)
+    return this
+  }
 
+  unionAxis(axis: NumberAxis): NumberAxis {
+    axis.intervalSpaces.forEach((val) => {
+      this._union(val)
+    })
+    return this
+  }
+
+  _union(interval: IntervalSpace): void {
     // 检测this中的区间是否包含newInterval
-    if (!this.isContain(newInterval)) {
+    if (!this.isContain(interval)) {
       // 检测newInterval中的区间是否包含this
       this.intervalSpaces.forEach((space, index) => {
-        if (newInterval.isSuperInterval(space)) {
+        if (interval.isSuperInterval(space)) {
           // 包含则删除
           this.intervalSpaces.splice(index, 1)
         }
       })
 
       // 检测newInterval中的区间是否与this交叉
-      if (this.hasCommonSpan(newInterval)) {
+      if (this.hasCommonSpan(interval)) {
         // 交叉则合并
-        const unionIndex = this.commonSpanIndex(newInterval)
-        this.intervalSpaces[unionIndex] = this.intervalSpaces[unionIndex].union(newInterval)
+        const unionIndex = this.commonSpanIndex(interval)
+        this.intervalSpaces[unionIndex] = this.intervalSpaces[unionIndex].union(interval)
       } else {
-        this.intervalSpaces.push(newInterval)
+        this.intervalSpaces.push(interval)
       }
     }
+  }
 
+  // 交集
+  intersect(op: Predicate, num: number): NumberAxis {
+    const newInterval = IntervalSpace.fromPredicate(op, num)
+    this._intersect(newInterval)
     return this
   }
 
-  intersect(op: Predicate, num: number): NumberAxis {
-    const newInterval = IntervalSpace.fromPredicate(op, num)
+  intersectAxis(axis: NumberAxis): NumberAxis {
+    axis.intervalSpaces.forEach((val) => {
+      this._intersect(val)
+    })
+    return this
+  }
 
+  _intersect(interval: IntervalSpace): void {
     // 检测this中的区间是否包含newInterval
-    if (this.isContain(newInterval)) {
+    if (this.isContain(interval)) {
       // 若包含则清空数轴上所有区间
-      this.intervalSpaces = [newInterval]
+      this.intervalSpaces = [interval]
     } else {
       // 不包含则尝试取交集
-      if (this.hasCommonSpan(newInterval)) {
-        const intersectIndex = this.commonSpanIndex(newInterval)
-        this.intervalSpaces[intersectIndex] = this.intervalSpaces[intersectIndex].intersect(newInterval)
+      if (this.hasCommonSpan(interval)) {
+        const intersectIndex = this.commonSpanIndex(interval)
+        this.intervalSpaces[intersectIndex] = this.intervalSpaces[intersectIndex].intersect(interval)
       } else {
         this.intervalSpaces = []
       }
     }
-
-    return this
   }
 
   isContain(interval: IntervalSpace) {
