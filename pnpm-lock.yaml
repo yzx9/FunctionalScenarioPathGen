@@ -7,6 +7,7 @@ specifiers:
   '@types/jest': ^27.5.1
   babel-jest: ^28.1.0
   jest: ^28.1.0
+  lodash: ^4.17.21
   typescript: ^4.6.4
 
 devDependencies:
@@ -16,6 +17,7 @@ devDependencies:
   '@types/jest': 27.5.1
   babel-jest: 28.1.0_@babel+core@7.18.0
   jest: 28.1.0
+  lodash: 4.17.21
   typescript: 4.6.4
 
 packages:
@@ -2777,6 +2779,10 @@ packages:
 
   /lodash.debounce/4.0.8:
     resolution: {integrity: sha1-gteb/zCmfEAF/9XiUVMArZyk168=}
+    dev: true
+
+  /lodash/4.17.21:
+    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
     dev: true
 
   /lru-cache/6.0.0:
