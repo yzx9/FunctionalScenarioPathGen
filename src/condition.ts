@@ -71,12 +71,11 @@ function conjunction(lAxes: MultiAxis[], rAxes: MultiAxis[]): MultiAxis[] {
   if (lAxes.length === 0 || rAxes.length === 0) {
     throw new Error("empty axes is not allowed")
   }
-
-  const [lOr, rOr] = [cloneDeep(lAxes), cloneDeep(rAxes)]
   const result: MultiAxis[] = []
-  for (let l of lOr) {
-    for (let r of rOr) {
-      result.push(l.intersect(r))
+  for (let l of lAxes) {
+    for (let r of rAxes) {
+      let ln = cloneDeep(l)
+      result.push(ln.intersect(r))
     }
   }
 
