@@ -1,6 +1,6 @@
 import { NumberAxis } from "./NumberAxis"
-
-import { setIntersection, setUnion } from "./setOperations"
+import { ConditionLeaf } from "./condition"
+import { isSuperset, setUnion } from "./setOperations"
 
 export class MultiAxis {
   axisMap: Map<string, NumberAxis>
@@ -12,7 +12,11 @@ export class MultiAxis {
     return new MultiAxis().set(key, axis)
   }
 
-  union(axes: MultiAxis) {
+  static fromCondition(cond: ConditionLeaf): MultiAxis {
+    return new MultiAxis().set(cond[0], new NumberAxis().union(cond[1], cond[2]))
+  }
+
+  union(axes: MultiAxis): MultiAxis {
     const allVariable = setUnion(this.keys, axes.keys)
     allVariable.forEach((key) => {
       if (this.has(key) && axes.has(key)) {
@@ -25,16 +29,29 @@ export class MultiAxis {
     return this
   }
 
-  intersect(axes: MultiAxis) {
-    const allVariable = setIntersection(this.keys, axes.keys)
-    this.axisMap.forEach((val, key) => {
-      if (!allVariable.has(key)) {
-        this.delete(key)
-      } else {
+  intersect(axes: MultiAxis): MultiAxis {
+    const allVariable = setUnion(this.keys, axes.keys)
+    allVariable.forEach((key) => {
+      if (this.has(key) && axes.has(key)) {
         this.set(key, this.get(key).intersectAxis(axes.get(key)))
+      }
+      if (!this.has(key) && axes.has(key)) {
+        this.set(key, axes.get(key))
       }
     })
     return this
+  }
+
+  isSuperAxis(axes: MultiAxis): boolean {
+    if (!isSuperset(this.keys, axes.keys)) {
+      return false
+    }
+    axes.axisMap.forEach((val, key) => {
+      if (!this.get(key).isContainAxis(val)) {
+        return false
+      }
+    })
+    return true
   }
 
   has(key: string): boolean {

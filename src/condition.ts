@@ -1,5 +1,6 @@
-import { NumberAxis } from "./NumberAxis"
-import { isSuperset, intersection } from "./setOperations"
+import { cloneDeep } from "lodash"
+
+import { MultiAxis } from "./MultiAxis"
 
 export type Variable = string
 
@@ -18,72 +19,86 @@ export enum Relation {
   or,
 }
 
-export type Condition =
-  | [Variable, Predicate, Comparable]
-  | [Condition, Relation, Condition]
+export type ConditionLeaf = [Variable, Predicate, Comparable]
+export type Condition = ConditionLeaf | [Condition, Relation, Condition]
 
 export function and(...conditions: Condition[]): Condition {
   let cond = conditions[0]
-  for (let i = 1; i < conditions.length; i++)
-    cond = [cond, Relation.and, conditions[i]]
+  for (let i = 1; i < conditions.length; i++) cond = [cond, Relation.and, conditions[i]]
 
   return cond
 }
 
 /**
- * 判断 A 是否为 B 的子集
- * @param a
- * @param b
- * @returns
+ * 判断 outCond 的输出结果是否能输入到 inCond 中
+ * @param outCond
+ * @param inCond
+ * @returns 若条件成立，则输出[out -> in](即可能成立的一条路径) 否则输出 false
  */
-export function isSubCondition(a: Condition, b: Condition): boolean {
-  const aAxes = getConditionAxes(a)
-  const bAxes = getConditionAxes(b)
-  const aVars = new Set([...aAxes.keys()])
-  const bVars = new Set([...bAxes.keys()])
-
-  if (isSuperset(aVars, bVars)) {
-    const intersectVars = intersection(aVars, bVars)
-    for (let variable of intersectVars) {
-      if (!aAxes.get(variable).isContainAxis(bAxes.get(variable))) {
-        return false
+export function isSubCondition(outCond: Condition, inCond: Condition): [MultiAxis, MultiAxis] | boolean {
+  const outAxes = getConditionAxes(outCond)
+  const inAxes = getConditionAxes(inCond)
+  for (let o of outAxes) {
+    for (let i of inAxes) {
+      if (i.isSuperAxis(o)) {
+        return [o, i]
       }
     }
-    return true
+  }
+  return false
+}
+
+function preorderTraversal(cond: Condition): MultiAxis[] {
+  if (!isLeaf(cond)) {
+    if (cond[1] === Relation.and) {
+      return conjunction(preorderTraversal(cond[0]), preorderTraversal(cond[2]))
+    }
+    if (cond[1] === Relation.or) {
+      return disjunction(preorderTraversal(cond[0]), preorderTraversal(cond[2]))
+    }
   } else {
-    return false
+    return [MultiAxis.fromCondition(cond)]
   }
 }
 
-function getConditionAxes(c: Condition) {
-  const conditions: [Variable, Predicate, Comparable][] = []
-  const axes = new Map<Variable, NumberAxis>()
+export function getConditionAxes(cond: Condition): MultiAxis[] {
+  return preorderTraversal(cond)
+}
 
-  function inorderTraversal(condition: Condition) {
-    // Condition is a root node
-    if (typeof condition[0] === "string") {
-      conditions.push(condition as [Variable, Predicate, Comparable])
-    } else {
-      inorderTraversal(condition[0] as [Condition, Relation, Condition])
-      inorderTraversal(condition[2] as [Condition, Relation, Condition])
+// 合取 and
+// (A or B) and (C or D) = (A and C) or (A and D) or (B and C) or (B and D)
+function conjunction(lAxes: MultiAxis[], rAxes: MultiAxis[]): MultiAxis[] {
+  if (lAxes.length === 0 || rAxes.length === 0) {
+    throw new Error("empty axes is not allowed")
+  }
+
+  const [lOr, rOr] = [cloneDeep(lAxes), cloneDeep(rAxes)]
+  const result: MultiAxis[] = []
+  for (let l of lOr) {
+    for (let r of rOr) {
+      result.push(l.intersect(r))
     }
   }
-  inorderTraversal(c)
 
-  conditions.forEach((item) => {
-    const [variable, op, num] = item
-    if (axes.has(variable)) {
-      axes.get(variable).add(op, num)
-    } else {
-      axes.set(variable, new NumberAxis().add(op, num))
-    }
-  })
+  return result
+}
 
-  return axes
+// 析取 or
+// (A or B) or (C or D) = A or B or C or D
+function disjunction(lAxes: MultiAxis[], rAxes: MultiAxis[]): MultiAxis[] {
+  if (lAxes.length === 0 || rAxes.length === 0) {
+    throw new Error("empty axes is not allowed")
+  }
+
+  return lAxes.concat(rAxes)
+}
+
+export function isLeaf(cond: Condition): cond is ConditionLeaf {
+  return typeof cond[2] === "number"
 }
 
 export function toString(cond: Condition): string {
-  if (typeof cond[0] === "string") {
+  if (isLeaf(cond)) {
     return _toString(cond)
   } else {
     let op: string
