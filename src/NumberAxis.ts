@@ -1,6 +1,6 @@
 import { Condition, Predicate } from "./condition"
 
-class IntervalSpace {
+export class IntervalSpace {
   interval: [number, number]
   isInclude: [boolean, boolean]
 
@@ -162,10 +162,6 @@ export class NumberAxis {
 
   constructor(intervalSpaces: IntervalSpace[] = []) {
     this.intervalSpaces = intervalSpaces
-  }
-  add(op: Predicate, num: number): NumberAxis {
-    // TODO
-    return this.union(op, num)
   }
 
   // 并集
