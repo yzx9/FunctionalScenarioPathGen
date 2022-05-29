@@ -5,7 +5,7 @@ import { divide, getArrangement, getFullArray } from "./utils"
 type Connect = [
   string, // from
   string, // to
-  Type[] // types
+  [Type, Type][] // types, [from, to]
 ]
 
 export class Path {
@@ -80,11 +80,11 @@ function genPathRoutes(path: Path): (path: Path) => Path[] {
   const from = path.layers[path.layers.length - 2]
   const to = path.layers[path.layers.length - 1]
 
-  const indexOfTypeFrom = new Map<string, number[]>() // from type to process `from`
+  const indexOfTypeFrom = new Map<string, [number, Type][]>() // from type to process `from`
   for (let i = 0; i < from.length; i++) {
     for (let t of from[i].y) {
       if (!indexOfTypeFrom.has(t.name)) indexOfTypeFrom.set(t.name, [])
-      indexOfTypeFrom.get(t.name).push(i)
+      indexOfTypeFrom.get(t.name).push([i, t])
     }
   }
 
@@ -92,7 +92,7 @@ function genPathRoutes(path: Path): (path: Path) => Path[] {
   for (let toIndex = 0; toIndex < to.length; toIndex++) {
     for (let x of to[toIndex].x) {
       const froms = indexOfTypeFrom.get(x.name)
-      connectsFullArray.push(froms.map((fromIndex) => [from[fromIndex].id, to[toIndex].id, [x]]))
+      connectsFullArray.push(froms.map(([fromIndex, y]) => [from[fromIndex].id, to[toIndex].id, [[x, y]]]))
     }
   }
 
