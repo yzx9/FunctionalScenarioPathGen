@@ -21,12 +21,9 @@ test("generate functional scenario paths, simple 3", () => {
 test("generate functional scenario paths, general route", () => {
   const pro1 = new Process("pro1", [Int], [Int])
   const pro2 = new Process("pro2", [Int], [Int])
-  const pro3 = new Process("pro3", [Int], [PositiveInt])
+  const pro3 = new Process("pro3", [PositiveInt], [PositiveInt])
 
   const re = genFuntionalScenarioPaths([pro1, pro2, pro3])
-  for (let x of re) {
-    console.log(x.layers.map((a) => a.map((b) => b.id).join(", ")).join("; "))
-  }
   expect(re.length).toBe(9)
 })
 

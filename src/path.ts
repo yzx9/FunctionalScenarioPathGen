@@ -77,22 +77,28 @@ function genPathRoutes(path: Path): (path: Path) => Path[] {
     return (path: Path) => [path]
   }
 
-  const from = path.layers[path.layers.length - 2]
-  const to = path.layers[path.layers.length - 1]
+  const fromLayer = path.layers[path.layers.length - 2]
+  const toLayer = path.layers[path.layers.length - 1]
 
-  const indexOfTypeFrom = new Map<string, [number, Type][]>() // from type to process `from`
-  for (let i = 0; i < from.length; i++) {
-    for (let t of from[i].y) {
+  const indexOfTypeFrom = new Map<
+    string, // type in process 'from'
+    [Process, Type][] //
+  >()
+  for (let i = 0; i < fromLayer.length; i++) {
+    for (let t of fromLayer[i].y) {
       if (!indexOfTypeFrom.has(t.name)) indexOfTypeFrom.set(t.name, [])
-      indexOfTypeFrom.get(t.name).push([i, t])
+      indexOfTypeFrom.get(t.name).push([fromLayer[i], t])
     }
   }
 
   const connectsFullArray: Connect[][] = []
-  for (let toIndex = 0; toIndex < to.length; toIndex++) {
-    for (let x of to[toIndex].x) {
-      const froms = indexOfTypeFrom.get(x.name)
-      connectsFullArray.push(froms.map(([fromIndex, y]) => [from[fromIndex].id, to[toIndex].id, [[x, y]]]))
+  for (let to of toLayer) {
+    for (let input of to.x) {
+      let name = input.name
+      while (name != "" && !indexOfTypeFrom.has(name)) name = name.replace(/, [^,]+$/, "") // get parent type
+
+      const fromAndType = indexOfTypeFrom.get(name)
+      connectsFullArray.push(fromAndType.map(([from, output]) => [from.id, to.id, [[output, input]]]))
     }
   }
 
@@ -111,20 +117,17 @@ function genPathRoutes(path: Path): (path: Path) => Path[] {
 
     for (let connects of connectsArray) {
       const newPath = path.copy()
-      const map = new Map<string, Connect>()
+      const map = new Map<string, Connect>() // merge vars
       for (let [from, to, [t]] of connects) {
         const key = `${from}->${to}`
         if (map.has(key)) {
-          const connect = map.get(key)
-          connect[2].push(t)
+          map.get(key)[2].push(t)
         } else {
           map.set(key, [from, to, [t]])
         }
       }
 
-      for (let [_, connect] of map) {
-        newPath.connects.push(connect)
-      }
+      newPath.connects.push(...map.values())
       paths.push(newPath)
     }
 
