@@ -80,42 +80,41 @@ function genPathRoutes(path: Path): (path: Path) => Path[] {
   const fromLayer = path.layers[path.layers.length - 2]
   const toLayer = path.layers[path.layers.length - 1]
 
-  const indexOfTypeFrom = new Map<
-    string, // type in process 'from'
-    [Process, Type][] //
+  const fromTypes = new WeakMap<
+    Type, // type in process 'from'
+    [Process, Type][]
   >()
   for (let i = 0; i < fromLayer.length; i++) {
     for (let t of fromLayer[i].y) {
-      if (!indexOfTypeFrom.has(t.name)) indexOfTypeFrom.set(t.name, [])
-      indexOfTypeFrom.get(t.name).push([fromLayer[i], t])
+      if (!fromTypes.has(t)) fromTypes.set(t, [])
+      fromTypes.get(t).push([fromLayer[i], t])
     }
   }
 
-  const connectsFullArray: Connect[][] = []
+  const connectsArray: Connect[][] = []
   for (let to of toLayer) {
     for (let input of to.x) {
-      let name = input.name
-      while (name != "" && !indexOfTypeFrom.has(name)) name = name.replace(/, [^,]+$/, "") // get parent type
+      let t = input
+      while (!fromTypes.has(t)) t = t.getParent() // assert t in map
 
-      const fromAndType = indexOfTypeFrom.get(name)
-      connectsFullArray.push(fromAndType.map(([from, output]) => [from.id, to.id, [[output, input]]]))
+      connectsArray.push(fromTypes.get(t).map(([from, output]) => [from.id, to.id, [[output, input]]]))
     }
   }
 
-  const typesFullArray = getFullArray(connectsFullArray.map((a) => a.length))
-  const connectsArray: Connect[][] = []
+  const typesFullArray = getFullArray(connectsArray.map((a) => a.length))
+  const connectsStrage: Connect[][] = []
   for (let typesConnect of typesFullArray) {
     const connects: Connect[] = []
     for (let i = 0; i < typesConnect.length; i++) {
-      connects.push(connectsFullArray[i][typesConnect[i]])
+      connects.push(connectsArray[i][typesConnect[i]])
     }
-    connectsArray.push(connects)
+    connectsStrage.push(connects)
   }
 
   return (path: Path) => {
     const paths: Path[] = []
 
-    for (let connects of connectsArray) {
+    for (let connects of connectsStrage) {
       const newPath = path.copy()
       const map = new Map<string, Connect>() // merge vars
       for (let [from, to, [t]] of connects) {

@@ -1,21 +1,29 @@
 export class Type {
+  parent: Type | null
   name: string
 
   constructor(name: string)
   constructor(parent: Type, name: string)
-  constructor(parent: string | Type, name?: string) {
-    let typeName: string
-    if (typeof parent === "object") {
-      typeName = parent.name + ", " + name
+  constructor(arg1: string | Type, arg2?: string) {
+    if (typeof arg1 === "object") {
+      this.parent = arg1
+      this.name = arg2
     } else {
-      typeName = parent
+      this.parent = null
+      this.name = arg1
     }
-
-    this.name = typeName
   }
 
   canBeType(type: Type): boolean {
-    return this.name.startsWith(type.name)
+    return type === this || this.parent?.canBeType(type)
+  }
+
+  hasParent(): boolean {
+    return this.parent != null
+  }
+
+  getParent(): Type | null {
+    return this.parent
   }
 }
 

@@ -1,12 +1,12 @@
+import { Condition, Predicate } from "../condition"
 import { genFuntionalScenarioPaths } from "../path"
 import { Process } from "../process"
 import { Bool, Int, Money, PositiveInt, Str } from "../type"
-import { isSubCondition, Condition, Variable, Comparable, Relation, Predicate } from "../condition"
 import { isValidPath } from "../validity"
 
 test("validate functional scenario paths, simple 1", () => {
-  let condition1: Condition = ["x", Predicate.lt, 1]
-  let condition2: Condition = ["x", Predicate.lt, 2]
+  const condition1: Condition = ["x", Predicate.lt, 1]
+  const condition2: Condition = ["x", Predicate.lt, 2]
   const pro1 = new Process("pro1", [Int], [Int], condition1, condition2)
   const pro2 = new Process("pro2", [Int], [Int], condition2, condition1)
   for (let path of genFuntionalScenarioPaths([pro1, pro2])) {

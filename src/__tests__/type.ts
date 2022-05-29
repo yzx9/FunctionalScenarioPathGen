@@ -1,25 +1,25 @@
 import { Int, PositiveInt, Str, isSubSet, merge } from "../type"
 
 test("type relation", () => {
-  expect(PositiveInt.canBeType(Int)).toBe(true)
-  expect(Int.canBeType(PositiveInt)).toBe(false)
+  expect(PositiveInt.canBeType(Int)).toBeTruthy()
+  expect(Int.canBeType(PositiveInt)).toBeFalsy()
 
-  expect(Int.canBeType(Str)).toBe(false)
+  expect(Int.canBeType(Str)).toBeFalsy()
 })
 
 test("type set relation", () => {
-  expect(isSubSet([], [Int])).toBe(true)
-  expect(isSubSet([Int], [])).toBe(false)
+  expect(isSubSet([], [Int])).toBeTruthy()
+  expect(isSubSet([Int], [])).toBeFalsy()
 
-  expect(isSubSet([Int], [PositiveInt])).toBe(false)
-  expect(isSubSet([PositiveInt], [Int])).toBe(true)
+  expect(isSubSet([Int], [PositiveInt])).toBeFalsy()
+  expect(isSubSet([PositiveInt], [Int])).toBeTruthy()
 
-  expect(isSubSet([Int], [PositiveInt, Int])).toBe(true)
+  expect(isSubSet([Int], [PositiveInt, Int])).toBeTruthy()
 
-  expect(isSubSet([Int], [Int, Str])).toBe(true)
-  expect(isSubSet([Str], [Int, Str])).toBe(true)
-  expect(isSubSet([Str, Int], [Int, Str])).toBe(true)
-  expect(isSubSet([Str, PositiveInt], [Int, Str])).toBe(true)
+  expect(isSubSet([Int], [Int, Str])).toBeTruthy()
+  expect(isSubSet([Str], [Int, Str])).toBeTruthy()
+  expect(isSubSet([Str, Int], [Int, Str])).toBeTruthy()
+  expect(isSubSet([Str, PositiveInt], [Int, Str])).toBeTruthy()
 })
 
 test("type merge", () => {
