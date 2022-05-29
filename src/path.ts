@@ -123,7 +123,7 @@ function genPathRoutes(path: Path): (path: Path) => Path[] {
       }
 
       for (let [_, connect] of map) {
-        path.connects.push(connect)
+        newPath.connects.push(connect)
       }
       paths.push(newPath)
     }
