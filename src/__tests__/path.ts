@@ -2,16 +2,20 @@ import { genFuntionalScenarioPaths } from "../path"
 import { Process } from "../process"
 import { Bool, Int, Money, Str } from "../type"
 
-test("generate functional scenario paths, simple", () => {
+test("generate functional scenario paths, simple 2", () => {
+  const pro1 = new Process("pro1", [Int], [Int])
+  const pro2 = new Process("pro2", [Int], [Int])
+
+  expect(genFuntionalScenarioPaths([pro1, pro2]).length).toBe(3)
+})
+
+test("generate functional scenario paths, simple 3", () => {
   const pro1 = new Process("pro1", [Int], [Int])
   const pro2 = new Process("pro2", [Int], [Int])
   const pro3 = new Process("pro3", [Int], [Int])
 
-  const re1 = genFuntionalScenarioPaths([pro1, pro2])
-  expect(re1.length).toBe(3)
-
-  const re2 = genFuntionalScenarioPaths([pro1, pro2, pro3])
-  expect(re2.length).toBe(13)
+  const re = genFuntionalScenarioPaths([pro1, pro2, pro3])
+  expect(re.length).toBe(16)
 })
 
 test("generate functional scenario paths, line", () => {

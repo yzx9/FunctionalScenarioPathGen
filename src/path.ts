@@ -79,11 +79,11 @@ function genPathRoutes(path: Path): (path: Path) => Path[] {
   const from = path.layers[path.layers.length - 2]
   const to = path.layers[path.layers.length - 1]
 
-  const indexOfTypeFroms = new Map<string, number[]>() // from type to process `from`
+  const indexOfTypeFrom = new Map<string, number[]>() // from type to process `from`
   for (let i = 0; i < from.length; i++) {
     for (let t of from[i].y) {
-      if (!indexOfTypeFroms.has(t.name)) indexOfTypeFroms.set(t.name, [])
-      indexOfTypeFroms.get(t.name).push(i)
+      if (!indexOfTypeFrom.has(t.name)) indexOfTypeFrom.set(t.name, [])
+      indexOfTypeFrom.get(t.name).push(i)
     }
   }
 
@@ -93,15 +93,22 @@ function genPathRoutes(path: Path): (path: Path) => Path[] {
   ][][] = []
   for (let toIndex = 0; toIndex < to.length; toIndex++) {
     for (let x of to[toIndex].x) {
-      const froms = indexOfTypeFroms.get(x.name)
+      const froms = indexOfTypeFrom.get(x.name)
       connectsFullArray.push(froms.map((fromIndex) => [fromIndex, toIndex]))
     }
   }
 
-  // TODO swith route
   const typesFullArray = getFullArray(connectsFullArray.map((a) => a.length))
-  const connectsArray: [number, number][][] = [[[0, 0]]]
+  const connectsArray: [
+    number, // index of from process
+    number // index of to process
+  ][][] = []
   for (let typesConnect of typesFullArray) {
+    const connects: [number, number][] = []
+    for (let i = 0; i < typesConnect.length; i++) {
+      connects.push(connectsFullArray[i][typesConnect[i]])
+    }
+    connectsArray.push(connects)
   }
 
   return (path: Path) => {
