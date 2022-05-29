@@ -2,24 +2,26 @@ import { Process } from "./process"
 import { Type, merge, isSubSet } from "./type"
 import { divide, getArrangement, getFullArray } from "./utils"
 
+type Connect = [
+  string, // from
+  string, // to
+  Type[] // types
+]
+
 export class Path {
   processes: Process[]
-  adjacencyMatrix: boolean[][]
+  connects: Connect[]
   layers: Process[][]
 
   constructor(processes: Process[]) {
     this.processes = processes
-    this.adjacencyMatrix = [
-      ...Array(processes.length)
-        .fill(0)
-        .map((_) => [...Array(processes.length).fill(false)]),
-    ]
+    this.connects = []
     this.layers = []
   }
 
   copy(): Path {
     const path = new Path(this.processes)
-    path.adjacencyMatrix = this.adjacencyMatrix.map((a) => a.map((b) => b))
+    path.connects = [...this.connects]
     path.layers = this.layers.map((a) => a.map((b) => b))
     return path
   }
@@ -37,7 +39,6 @@ export function genFuntionalScenarioPaths(processes: Process[]): Path[] {
 /**
  *
  * @param lastPath 上一级的Path
- * @param lastOutputs 上一级的输出
  * @param processes 可用的Process
  * @returns
  */
@@ -61,9 +62,9 @@ function genPathLayer(lastPath: Path, processes: Process[]): Path[] {
 
       const path = lastPath.copy()
       path.layers.push(used)
+      const writeRoutes = genPathRoutes(path)
 
       const subpaths = genPathLayer(path, notUsed)
-      const writeRoutes = genPathRoutes(path)
       paths.push(...subpaths.map(writeRoutes).flat())
     }
   }
@@ -87,24 +88,18 @@ function genPathRoutes(path: Path): (path: Path) => Path[] {
     }
   }
 
-  const connectsFullArray: [
-    number, // index of from process
-    number // index of to process
-  ][][] = []
+  const connectsFullArray: Connect[][] = []
   for (let toIndex = 0; toIndex < to.length; toIndex++) {
     for (let x of to[toIndex].x) {
       const froms = indexOfTypeFrom.get(x.name)
-      connectsFullArray.push(froms.map((fromIndex) => [fromIndex, toIndex]))
+      connectsFullArray.push(froms.map((fromIndex) => [from[fromIndex].id, to[toIndex].id, [x]]))
     }
   }
 
   const typesFullArray = getFullArray(connectsFullArray.map((a) => a.length))
-  const connectsArray: [
-    number, // index of from process
-    number // index of to process
-  ][][] = []
+  const connectsArray: Connect[][] = []
   for (let typesConnect of typesFullArray) {
-    const connects: [number, number][] = []
+    const connects: Connect[] = []
     for (let i = 0; i < typesConnect.length; i++) {
       connects.push(connectsFullArray[i][typesConnect[i]])
     }
@@ -116,7 +111,20 @@ function genPathRoutes(path: Path): (path: Path) => Path[] {
 
     for (let connects of connectsArray) {
       const newPath = path.copy()
-      for (let [from, to] of connects) path.adjacencyMatrix[from][to] = true
+      const map = new Map<string, Connect>()
+      for (let [from, to, [t]] of connects) {
+        const key = `${from}->${to}`
+        if (map.has(key)) {
+          const connect = map.get(key)
+          connect[2].push(t)
+        } else {
+          map.set(key, [from, to, [t]])
+        }
+      }
+
+      for (let [_, connect] of map) {
+        path.connects.push(connect)
+      }
       paths.push(newPath)
     }
 
